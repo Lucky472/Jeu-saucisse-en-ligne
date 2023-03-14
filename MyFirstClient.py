@@ -11,6 +11,7 @@ R=5
 
 INITIAL=0
 ACTIVE=1
+INACTIVE=2
 DEAD=-1
 MY_COLOR = "#ff0000"
 OPPONENT_COLOR = "#00ff00"
@@ -41,13 +42,15 @@ class Client(ConnectionListener):
         self.state=DEAD
    
     def Network_start(self,data):
-        self.state=ACTIVE
+        self.state=data["state"]
         print("started")
+        print(self.state)
    
     def Network_newPoint(self, data):
         (x,y)=data["newPoint"]
         self.window.white_board_canvas.create_oval(x-R,y-R,x+R,y+R, fill = OPPONENT_COLOR)
         self.window.white_board_canvas.update()
+        self.client.state = ACTIVE
     
     def Network_error(self, data):
         print('error:', data['error'][1])
@@ -56,7 +59,9 @@ class Client(ConnectionListener):
     def Network_disconnected(self, data):
         print('Server disconnected')
         exit()
-    
+
+    def Network_setactive(self,data):
+        self.state = ACTIVE
 #########################################################
 
 class ClientWindow(Tk):
@@ -71,8 +76,12 @@ class ClientWindow(Tk):
 
 
     def drawNewPoint(self,evt):
-        self.white_board_canvas.create_oval(evt.x-R,evt.y-R,evt.x+R,evt.y+R, fill = MY_COLOR )
-        self.client.Send({"action":"newPoint","newPoint" : (evt.x,evt.y)})
+        print("clic")
+        print(self.client.state)
+        if self.client.state==ACTIVE:
+            self.white_board_canvas.create_oval(evt.x-R,evt.y-R,evt.x+R,evt.y+R, fill = MY_COLOR )
+            self.client.Send({"action":"newPoint","newPoint" : (evt.x,evt.y)})
+            self.client.state = INACTIVE
     def myMainLoop(self):
         while self.client.state!=DEAD:   
             self.update()

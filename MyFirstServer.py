@@ -4,6 +4,9 @@ from time import sleep, localtime
 from PodSixNet.Server import Server
 from PodSixNet.Channel import Channel
 
+ACTIVE = 1
+INACTIVE = 2
+
 class ClientChannel(Channel):
     """
     This is the server representation of a connected client.
@@ -16,11 +19,17 @@ class ClientChannel(Channel):
     def Network_newPoint(self, data):
         print(data)
         self._server.SendToOthers({"newPoint": data["newPoint"], "who": self.nickname})
+        self._server.SendToOthers({"setactive": None, "who": self.nickname})
     
     def Network_nickname(self, data):
         self.nickname = data["nickname"]
         self._server.PrintPlayers()
-        self.Send({"action":"start"})
+        if len(self._server.players) == 1 :
+            self.Send({"action":"start","state":ACTIVE})
+            print("pif")
+        else :
+            self.Send({"action":"start","state":INACTIVE})
+            print("paf")
 
 class MyServer(Server):
     channelClass = ClientChannel

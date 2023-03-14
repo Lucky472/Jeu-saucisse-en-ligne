@@ -12,6 +12,8 @@ R=5
 INITIAL=0
 ACTIVE=1
 DEAD=-1
+MY_COLOR = "#ff0000"
+OPPONENT_COLOR = "#00ff00"
 
 class Client(ConnectionListener):
     def __init__(self, host, port, window):
@@ -44,7 +46,7 @@ class Client(ConnectionListener):
    
     def Network_newPoint(self, data):
         (x,y)=data["newPoint"]
-        self.window.white_board_canvas.create_oval(x-R,y-R,x+R,y+R)
+        self.window.white_board_canvas.create_oval(x-R,y-R,x+R,y+R, fill = OPPONENT_COLOR)
         self.window.white_board_canvas.update()
     
     def Network_error(self, data):
@@ -69,7 +71,7 @@ class ClientWindow(Tk):
 
 
     def drawNewPoint(self,evt):
-        self.white_board_canvas.create_oval(evt.x-R,evt.y-R,evt.x+R,evt.y+R)
+        self.white_board_canvas.create_oval(evt.x-R,evt.y-R,evt.x+R,evt.y+R, fill = MY_COLOR )
         self.client.Send({"action":"newPoint","newPoint" : (evt.x,evt.y)})
     def myMainLoop(self):
         while self.client.state!=DEAD:   

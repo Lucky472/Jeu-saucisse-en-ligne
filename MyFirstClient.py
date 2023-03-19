@@ -50,7 +50,7 @@ class Client(ConnectionListener):
         (x,y)=data["newPoint"]
         self.window.white_board_canvas.create_oval(x-R,y-R,x+R,y+R, fill = OPPONENT_COLOR)
         self.window.white_board_canvas.update()
-        self.client.state = ACTIVE
+        self.state = ACTIVE
     
     def Network_error(self, data):
         print('error:', data['error'][1])
@@ -82,6 +82,7 @@ class ClientWindow(Tk):
             self.white_board_canvas.create_oval(evt.x-R,evt.y-R,evt.x+R,evt.y+R, fill = MY_COLOR )
             self.client.Send({"action":"newPoint","newPoint" : (evt.x,evt.y)})
             self.client.state = INACTIVE
+
     def myMainLoop(self):
         while self.client.state!=DEAD:   
             self.update()

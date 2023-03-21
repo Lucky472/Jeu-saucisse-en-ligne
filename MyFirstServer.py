@@ -24,12 +24,18 @@ class ClientChannel(Channel):
     def Network_nickname(self, data):
         self.nickname = data["nickname"]
         self._server.PrintPlayers()
-        if len(self._server.players) == 1 :
+        pifpaf = True
+        if pifpaf :
             self.Send({"action":"start","state":ACTIVE})
             print("pif")
         else :
             self.Send({"action":"start","state":INACTIVE})
             print("paf")
+        pifpaf = not pifpaf
+
+    def Network_color(self,data):
+        self.color = data["color"]
+        self._server.SendToOthers({"action":"other_color","other_color":self.color, "who":self.nickname})
 
 class MyServer(Server):
     channelClass = ClientChannel

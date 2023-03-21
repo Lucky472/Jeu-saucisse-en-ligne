@@ -28,6 +28,9 @@ class Client(ConnectionListener):
         nickname=stdin.readline().rstrip("\n")
         self.nickname=nickname
         connection.Send({"action": "nickname", "nickname": nickname})
+        print("Enter your color: ")
+        self.color=stdin.readline().rstrip("\n")
+        connection.Send({"action": "color" ,"color": self.color})
 
         
     def Network_connected(self, data):
@@ -48,7 +51,7 @@ class Client(ConnectionListener):
    
     def Network_newPoint(self, data):
         (x,y)=data["newPoint"]
-        self.window.white_board_canvas.create_oval(x-R,y-R,x+R,y+R, fill = OPPONENT_COLOR)
+        self.window.white_board_canvas.create_oval(x-R,y-R,x+R,y+R, fill = self.other_color)
         self.window.white_board_canvas.update()
         self.state = ACTIVE
     
@@ -62,6 +65,9 @@ class Client(ConnectionListener):
 
     def Network_setactive(self,data):
         self.state = ACTIVE
+    
+    def Network_other_color(self,data):
+        self.other_color = data["other_color"]
 #########################################################
 
 class ClientWindow(Tk):
@@ -79,7 +85,7 @@ class ClientWindow(Tk):
         print("clic")
         print(self.client.state)
         if self.client.state==ACTIVE:
-            self.white_board_canvas.create_oval(evt.x-R,evt.y-R,evt.x+R,evt.y+R, fill = MY_COLOR )
+            self.white_board_canvas.create_oval(evt.x-R,evt.y-R,evt.x+R,evt.y+R, fill = self.client.color )
             self.client.Send({"action":"newPoint","newPoint" : (evt.x,evt.y)})
             self.client.state = INACTIVE
 

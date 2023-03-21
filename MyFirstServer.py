@@ -18,8 +18,8 @@ class ClientChannel(Channel):
     
     def Network_newPoint(self, data):
         print(data)
-        self._server.SendToOthers({"newPoint": data["newPoint"], "who": self.nickname})
-        self._server.SendToOthers({"setactive": None, "who": self.nickname})
+        self._server.SendToOthers({"action":"newPoint", "newPoint": data["newPoint"], "who": self.nickname})
+        self._server.SendToOthers({"action":"setactive", "who": self.nickname})
     
     def Network_nickname(self, data):
         self.nickname = data["nickname"]
@@ -53,7 +53,9 @@ class MyServer(Server):
         del self.players[player]
        
     def SendToOthers(self, data):
-        [p.Send({"action":"newPoint", "newPoint" : data["newPoint"]}) for p in self.players if p.nickname != data["who"]]
+        #p.send(data)
+        #[p.Send({"action":"newPoint", "newPoint" : data["newPoint"]}) for p in self.players if p.nickname != data["who"]]
+        [p.Send(data) for p in self.players if p.nickname != data["who"]]
     
     def Launch(self):
         while True:
@@ -69,4 +71,3 @@ else:
     host, port = sys.argv[1].split(":")
 s = MyServer((host, int(port)))
 s.Launch()
-

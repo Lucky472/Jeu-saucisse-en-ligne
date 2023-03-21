@@ -54,7 +54,6 @@ class MyServer(Server):
        
     def SendToOthers(self, data):
         #p.send(data)
-        #[p.Send({"action":"newPoint", "newPoint" : data["newPoint"]}) for p in self.players if p.nickname != data["who"]]
         [p.Send(data) for p in self.players if p.nickname != data["who"]]
     
     def Launch(self):

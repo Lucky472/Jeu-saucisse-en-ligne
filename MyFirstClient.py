@@ -88,7 +88,6 @@ class ClientWindow(Tk):
             self.update()
             self.client.Loop()
             sleep(0.001)
-        print("je me ferme")
         exit()    
 
 

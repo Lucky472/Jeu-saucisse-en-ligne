@@ -24,6 +24,9 @@ class Client(ConnectionListener):
         self.state=INITIAL
         print("Client started")
         print("Ctrl-C to exit")
+        
+        
+    def Network_initplayer(self,data):
         print("Enter your nickname: ")
         nickname=stdin.readline().rstrip("\n")
         self.nickname=nickname

@@ -50,7 +50,12 @@ class MyServer(Server):
     def AddPlayer(self, player):
         print("New Player connected")
         self.players[player] = True
- 
+        if len(self.players) == 2:
+            self.start_players()
+
+    def start_players(self):
+        [p.Send({"action": "initplayer"}) for p in self.players]
+
     def PrintPlayers(self):
         print("players' nicknames :",[p.nickname for p in self.players])
   

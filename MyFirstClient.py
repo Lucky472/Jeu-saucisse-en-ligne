@@ -129,6 +129,10 @@ class GameShow:
         #Initialise l'interface graphique
         self.window = window
         self.client = client
+        self.color = self.client.color
+        self.other_color = self.client.other_color
+        print(f"ma couleur{self.color}")
+        print(f"couleur ennemie {self.other_color}")
         #self.window.iconbitmap("IMAGE-SAUCISSE.ico")
         self.plateau = Frame(self.window,width=WIDTHCANVAS,height=HEIGHTCANVAS)
         self.menu = Frame(self.window,width=WIDTHCANVAS,height=HEIGHTMENU)

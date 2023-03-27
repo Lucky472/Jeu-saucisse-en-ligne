@@ -32,13 +32,18 @@ class Client(ConnectionListener):
     def __init__(self, host, port, window):
         self.window = window
         self.Connect((host, port))
-
+        self.color = "#f300f3"
+        self.other_color = "#f3f300"
         self.state=INITIAL
         print("Client started")
         print("Ctrl-C to exit")
         
         
     def Network_initplayer(self,data):
+        """
+        c'est dans cette fonction qu'il faut remplacer les stdin.readline par la fonction qui fait la popup pour choisir pseudo et couleur
+        ou autre en tout cas c'est ici'
+        """
         print("Enter your nickname: ")
         nickname=stdin.readline().rstrip("\n")
         self.nickname=nickname
@@ -61,16 +66,9 @@ class Client(ConnectionListener):
    
     def Network_start(self,data):
         self.state=data["state"]
+        self.window.game_show.game_engine.state=data["state"]
         print("started")
         print(self.state)
-   
-    def Network_newPoint(self, data):
-        """"
-        (x,y)=data["newPoint"]
-        self.window.white_board_canvas.create_oval(x-R,y-R,x+R,y+R, fill = self.other_color)
-        self.window.white_board_canvas.update()
-        self.state = ACTIVE
-        """
     
     def Network_error(self, data):
         print('error:', data['error'][1])
@@ -82,15 +80,14 @@ class Client(ConnectionListener):
 
     def Network_setactive(self,data):
         self.state = ACTIVE
+        self.window.game_show.game_engine.state = ACTIVE
     
     def Network_other_color(self,data):
         self.other_color = data["other_color"]
     
-    def Network_add_clicked_point(self,data):
-        #prend en data le tuple (i,j) coordonnées du point dans la matrice du jeu
-        point = data["clicked_point"]
-        self.game_show.add_other_point(point)
-
+    def Network_oponent_played(self,data):
+        self.window.game_show.game_engine.selected_dots = data["sausage"]
+        self.window.game_show.controller_sausage()
 
 #########################################################
 
@@ -98,24 +95,7 @@ class ClientWindow(Tk):
     def __init__(self, host, port):
         Tk.__init__(self)
         self.client = Client(host, int(port), self)
-        self.game_show = GameShow(self)
-        """self.white_board_canvas = Canvas(self, width=WIDTH, height = HEIGHT,bg='white')
-        self.white_board_canvas.pack(side=TOP)
-        self.white_board_canvas.bind("<Button-1>",self.drawNewPoint)
-        quit_but=Button(self,text='Quitter',command = self.client.quit)
-        quit_but.pack(side=BOTTOM)
-        """
-
-    def drawNewPoint(self,evt):
-        """
-        print("clic")
-        print(self.client.state)
-        if self.client.state==ACTIVE:
-            self.white_board_canvas.create_oval(evt.x-R,evt.y-R,evt.x+R,evt.y+R, fill = self.client.color )
-            self.client.Send({"action":"newPoint","newPoint" : (evt.x,evt.y)})
-            self.client.state = INACTIVE
-            """
-        pass
+        self.game_show = GameShow(self,self.client)
 
     def myMainLoop(self):
         while self.client.state!=DEAD:   
@@ -123,6 +103,7 @@ class ClientWindow(Tk):
             self.client.Loop()
             sleep(0.001)
         exit()    
+
 
 class GameShow:
     def __init__(self,window,client):
@@ -137,7 +118,7 @@ class GameShow:
         self.plateau = Frame(self.window,width=WIDTHCANVAS,height=HEIGHTCANVAS)
         self.menu = Frame(self.window,width=WIDTHCANVAS,height=HEIGHTMENU)
         self.canvas = Canvas(self.plateau, width = WIDTHCANVAS,height=HEIGHTCANVAS,bg=COLORCANVAS,highlightthickness=3,highlightbackground=COLORPOINT)
-        self.game_engine = GameEngine(self.canvas)
+        self.game_engine = GameEngine(self.canvas,self.client)
         self.label_text_next_to_active_player = Label(self.menu, text="Active player:", bg=self.active_player_color(),font = TEXTFONT)
         self.active_player = StringVar()    
         self.active_player.set(self.game_engine.active_player)
@@ -188,46 +169,30 @@ class GameShow:
                 
     def on_click(self,evt):
         """
-            S'occupe de tous les évéènements à appeller lors d'un clic
+            S'occupe de tous les évènements à appeller lors d'un clic
         """
-        if self.game_on:
+        if self.game_on and self.game_engine.state == ACTIVE:
             self.game_engine.on_click(evt)
             if len(self.game_engine.selected_dots) == 3 :
-                self.draw_sausage(self.game_engine.selected_dots)
-                self.change_color_point()
-                self.game_engine.draw_sausage()
-                #vérifie si la partie est finie
-                if self.game_engine.game_over_test():
-                    self.show_winner()
-                    self.game_on = False
-                self.game_engine.change_active_player()
-                self.active_player.set(self.game_engine.active_player)
-                self.label_text_next_to_active_player["bg"]=self.active_player_color()
-                self.label_active_player["bg"]=self.active_player_color()
+                self.client.Send({"action":"new_sausage","sausage":self.game_engine.selected_dots})
+                self.controller_sausage()
             self.highlight_points()
             if len(self.game_engine.selected_dots) != 0 :
                 dot_x, dot_y = self.game_engine.selected_dots[-1]
                 self.color_point(self.game_engine.board[dot_x][dot_y],self.active_player_color())
-    
-    def add_other_point(self,point):
-        if self.game_on:
-             if len(self.game_engine.selected_dots) == 3 :
-                self.draw_sausage(self.game_engine.selected_dots)
-                self.change_color_point()
-                self.game_engine.draw_sausage()
-                #vérifie si la partie est finie
-                if self.game_engine.game_over_test():
-                    self.show_winner()
-                    self.game_on = False
-                self.game_engine.change_active_player()
-                self.active_player.set(self.game_engine.active_player)
-                self.label_text_next_to_active_player["bg"]=self.active_player_color()
-                self.label_active_player["bg"]=self.active_player_color()
-             self.highlight_points()
-        if len(self.game_engine.selected_dots) != 0 :
-                dot_x, dot_y = self.game_engine.selected_dots[-1]
-                self.color_point(self.game_engine.board[dot_x][dot_y],self.active_player_color())
 
+    def controller_sausage(self) :
+        self.draw_sausage(self.game_engine.selected_dots)
+        self.change_color_point()
+        self.game_engine.draw_sausage()
+        #vérifie si la partie est finie
+        if self.game_engine.game_over_test():
+            self.show_winner()
+            self.game_on = False
+        self.game_engine.change_active_player()
+        self.active_player.set(self.game_engine.active_player)
+        self.label_text_next_to_active_player["bg"]=self.active_player_color()
+        self.label_active_player["bg"]=self.active_player_color()
 
 
 
@@ -243,14 +208,13 @@ class GameShow:
             alpha = COLORPLAYER1 
         else : 
             alpha = COLORPLAYER2 
+            
+        center1 = ((point1[2] + point1[0])/2,(point1[3] + point1[1])/2)
+        center2 = ((point2[2] + point2[0])/2,(point2[3] + point2[1])/2)
+        center3 = ((point3[2] + point3[0])/2,(point3[3] + point3[1])/2)
 
-        if len(self.game_engine.selected_dots) ==3: 
-            center1 = ((point1[2] + point1[0])/2,(point1[3] + point1[1])/2)
-            center2 = ((point2[2] + point2[0])/2,(point2[3] + point2[1])/2)
-            center3 = ((point3[2] + point3[0])/2,(point3[3] + point3[1])/2)
-
-            self.canvas.create_line(center1[0],center1[1],center2[0],center2[1], fill= alpha, width=SAUSAGEWIDTH )
-            self.canvas.create_line(center2[0],center2[1],center3[0],center3[1], fill= alpha, width=SAUSAGEWIDTH )
+        self.canvas.create_line(center1[0],center1[1],center2[0],center2[1], fill= alpha, width=SAUSAGEWIDTH )
+        self.canvas.create_line(center2[0],center2[1],center3[0],center3[1], fill= alpha, width=SAUSAGEWIDTH )
     
     def highlight_points(self):
         """
@@ -315,7 +279,6 @@ class GameEngine:
         if dot != None and dot not in self.selected_dots :
             if self.board[dot[0]][dot[1]].can_be_clicked ==True:
                 self.selected_dots.append(dot)
-                self.client.Send({"action":"add_clicked_point","clicked_point":dot})
         self.update_dots_clickability()
     
     def reset_sausage(self):
@@ -491,6 +454,10 @@ class GameEngine:
         else :
             self.active_player = self.list_player[0]
         
+        if self.state == ACTIVE:
+            self.state = INACTIVE
+        else :
+            self.state = ACTIVE
     def is_a_point(self,i,j):
         if (i+j)%2 == 0:
             return True

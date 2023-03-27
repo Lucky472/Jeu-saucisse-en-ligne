@@ -24,18 +24,14 @@ class ClientChannel(Channel):
     def Network_nickname(self, data):
         self.nickname = data["nickname"]
         self._server.PrintPlayers()
-        pifpaf = True
-        if pifpaf :
-            self.Send({"action":"start","state":ACTIVE})
-            print("pif")
-        else :
-            self.Send({"action":"start","state":INACTIVE})
-            print("paf")
-        pifpaf = not pifpaf
-
+        self._server.start_player(data)
+        
     def Network_color(self,data):
         self.color = data["color"]
         self._server.SendToOthers({"action":"other_color","other_color":self.color, "who":self.nickname})
+
+    def Network_new_sausage(self,data):
+        self._server.SendToOthers({"action":"oponent_played","sausage":data["sausage"], "who":self.nickname})
 
 class MyServer(Server):
     channelClass = ClientChannel
@@ -43,6 +39,7 @@ class MyServer(Server):
         Server.__init__(self, localaddr=mylocaladdr)
         self.players={}
         print('Server launched')
+        self.pifpaf = True
     
     def Connected(self, channel, addr):
         self.AddPlayer(channel)
@@ -50,11 +47,19 @@ class MyServer(Server):
     def AddPlayer(self, player):
         print("New Player connected")
         self.players[player] = True
-        if len(self.players) == 2:
-            self.start_players()
+        if len(self.players) == 2 :
+            self.SendToOthers({"action": "initplayer","who":None})
+        
+    def start_player(self,data):
+        #[p.Send({"action": "initplayer"}) for p in self.players]
+        if self.pifpaf :
+            [p.Send({"action":"start","state":ACTIVE}) for p in self.players if p.nickname == data["nickname"]]
+            print("pif")
+        else :
+            [p.Send({"action":"start","state":INACTIVE}) for p in self.players if p.nickname == data["nickname"]]
+            print("paf")
+        self.pifpaf = not self.pifpaf
 
-    def start_players(self):
-        [p.Send({"action": "initplayer"}) for p in self.players]
 
     def PrintPlayers(self):
         print("players' nicknames :",[p.nickname for p in self.players])

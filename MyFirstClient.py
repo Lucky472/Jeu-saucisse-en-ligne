@@ -33,7 +33,7 @@ class Client(ConnectionListener):
         self.window = window
         self.Connect((host, port))
         self.color = "#f300f3"
-        self.other_color = "#f3f300"
+        self.oponent_color = "#f3f300"
         self.state=INITIAL
         print("Client started")
         print("Ctrl-C to exit")
@@ -84,12 +84,14 @@ class Client(ConnectionListener):
         self.window.game_show.game_engine.state = ACTIVE
     
     def Network_other_color(self,data):
-        self.other_color = data["other_color"]
+        self.oponent_color = data["other_color"]
         self.oponent = data["who"]
         if self.state == ACTIVE :
             self.window.game_show.game_engine.list_player = [self.oponent,self.nickname]
+            self.window.game_show.game_engine.list_color = [self.oponent_color,self.color]
         else :
             self.window.game_show.game_engine.list_player = [self.nickname,self.oponent]
+            self.window.game_show.game_engine.list_color = [self.color,self.oponent_color]
     
     def Network_oponent_played(self,data):
         self.window.game_show.game_engine.selected_dots = data["sausage"]
@@ -116,10 +118,6 @@ class GameShow:
         #Initialise l'interface graphique
         self.window = window
         self.client = client
-        self.color = self.client.color
-        self.other_color = self.client.other_color
-        print(f"ma couleur{self.color}")
-        print(f"couleur ennemie {self.other_color}")
         #self.window.iconbitmap("IMAGE-SAUCISSE.ico")
         self.plateau = Frame(self.window,width=WIDTHCANVAS,height=HEIGHTCANVAS)
         self.menu = Frame(self.window,width=WIDTHCANVAS,height=HEIGHTMENU)
@@ -144,11 +142,12 @@ class GameShow:
         self.button_forfeit.pack(side = LEFT)
         self.button_undo.pack(side=LEFT, padx=WIDTHCANVAS//3)
         self.draw_board()
+
     def active_player_color(self):
         if self.game_engine.active_player == self.game_engine.list_player[0]:
-            return COLORPLAYER1
+            return self.game_engine.list_color[0]
         if self.game_engine.active_player == self.game_engine.list_player[1]:
-            return COLORPLAYER2
+            return self.game_engine.list_color[1]
         
     def forfeit_popup(self):
         self.forfeit_popup = messagebox.askyesno(title='Forfeit', message='Do you really want to forfeit?')
@@ -209,9 +208,9 @@ class GameShow:
         point3 = self.game_engine.canvas.coords(self.game_engine.board[dots[2][0]][dots[2][1]].id)
 
         if self.game_engine.active_player == self.game_engine.list_player[0] : 
-            alpha = COLORPLAYER1 
+            alpha = self.game_engine.list_color[0]
         else : 
-            alpha = COLORPLAYER2 
+            alpha = self.game_engine.list_color[1]
             
         center1 = ((point1[2] + point1[0])/2,(point1[3] + point1[1])/2)
         center2 = ((point2[2] + point2[0])/2,(point2[3] + point2[1])/2)
@@ -248,9 +247,9 @@ class GameShow:
         for dot in self.game_engine.selected_dots:
             point = self.game_engine.board[dot[0]][dot[1]]
             if self.game_engine.active_player == self.game_engine.list_player[0]:
-                self.color_point(point,COLORPLAYER1)
+                self.color_point(point,self.game_engine.list_color[0])
             if self.game_engine.active_player == self.game_engine.list_player[1]:
-                self.color_point(point,COLORPLAYER2)            
+                self.color_point(point,self.game_engine.list_color[1])            
     
     def reset_sausage(self):
         """
@@ -272,6 +271,7 @@ class GameEngine:
         self.canvas = canvas
         self.board = self.set_new_board()
         self.list_player = ["Joueur 1","Joueur 2"]
+        self.list_color = ["#40A040","#ed1111"]
         self.active_player = self.list_player[0]
         self.selected_dots = []
         
@@ -465,6 +465,7 @@ class GameEngine:
             self.state = INACTIVE
         else :
             self.state = ACTIVE
+
     def is_a_point(self,i,j):
         if (i+j)%2 == 0:
             return True

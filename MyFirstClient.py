@@ -67,6 +67,7 @@ class Client(ConnectionListener):
     def Network_start(self,data):
         self.state=data["state"]
         self.window.game_show.game_engine.state=data["state"]
+        
         print("started")
         print(self.state)
     
@@ -84,6 +85,11 @@ class Client(ConnectionListener):
     
     def Network_other_color(self,data):
         self.other_color = data["other_color"]
+        self.oponent = data["who"]
+        if self.state == ACTIVE :
+            self.window.game_show.game_engine.list_player = [self.oponent,self.nickname]
+        else :
+            self.window.game_show.game_engine.list_player = [self.nickname,self.oponent]
     
     def Network_oponent_played(self,data):
         self.window.game_show.game_engine.selected_dots = data["sausage"]
@@ -153,9 +159,6 @@ class GameShow:
             self.label_active_player["bg"]=self.active_player_color()
             self.show_winner()
             self.canvas.after(3000,self.window.destroy)
-
-        if self.forfeit_popup == NO:
-            pass
         
     def draw_board(self):
         """
@@ -191,6 +194,7 @@ class GameShow:
             self.game_on = False
         self.game_engine.change_active_player()
         self.active_player.set(self.game_engine.active_player)
+        print(("show",self.active_player))
         self.label_text_next_to_active_player["bg"]=self.active_player_color()
         self.label_active_player["bg"]=self.active_player_color()
 
@@ -451,9 +455,12 @@ class GameEngine:
     def change_active_player(self):
         if self.active_player == self.list_player[0]:
             self.active_player = self.list_player[1]
+            print(self.list_player)
+            print(self.active_player)
         else :
             self.active_player = self.list_player[0]
-        
+            print(self.list_player)
+            print(self.active_player)
         if self.state == ACTIVE:
             self.state = INACTIVE
         else :

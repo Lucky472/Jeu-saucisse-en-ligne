@@ -100,6 +100,17 @@ class Client(ConnectionListener):
         self.window.game_show.game_engine.selected_dots = data["sausage"]
         self.window.game_show.controller_sausage()
 
+    def Network_oponent_forfeit(self,data):
+        self.window.game_show.game_engine.change_active_player()
+        self.window.game_show.active_player.set(self.window.game_show.game_engine.active_player)
+        self.window.game_show.label_text_next_to_active_player["bg"]=self.window.game_show.active_player_color()
+        self.window.game_show.label_active_player["bg"]=self.window.game_show.active_player_color()
+        self.window.game_show.show_winner()
+        self.window.game_show.game_on = False
+        #self.window.game_show.canvas.after(1500,self.window.destroy)
+        self.window.state = DEAD
+        exit()
+
 #########################################################
 
 class ClientWindow(Tk):
@@ -109,11 +120,12 @@ class ClientWindow(Tk):
         self.game_show = GameShow(self,self.client)
 
     def myMainLoop(self):
-        while self.client.state!=DEAD:   
+        while self.client.state!=DEAD:
             self.update()
             self.client.Loop()
             sleep(0.001)
-        exit()    
+        exit()
+        print("jem'execute dans mainloop")
 
 
 class GameShow:
@@ -160,7 +172,10 @@ class GameShow:
             self.label_text_next_to_active_player["bg"]=self.active_player_color()
             self.label_active_player["bg"]=self.active_player_color()
             self.show_winner()
-            self.canvas.after(3000,self.window.destroy)
+            self.client.Send({"action":"forfeit"})
+            #self.canvas.after(1500,self.window.destroy())
+            self.window.state = DEAD
+            exit()
         
     def draw_board(self):
         """

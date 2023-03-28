@@ -16,11 +16,6 @@ class ClientChannel(Channel):
     def Close(self):
         self._server.DelPlayer(self)
     
-    def Network_newPoint(self, data):
-        print(data)
-        self._server.SendToOthers({"action":"newPoint", "newPoint": data["newPoint"], "who": self.nickname})
-        self._server.SendToOthers({"action":"setactive", "who": self.nickname})
-    
     def Network_nickname(self, data):
         self.nickname = data["nickname"]
         self._server.PrintPlayers()
@@ -33,6 +28,9 @@ class ClientChannel(Channel):
     def Network_new_sausage(self,data):
         self._server.SendToOthers({"action":"oponent_played","sausage":data["sausage"], "who":self.nickname})
 
+    def Network_forfeit(self,data):
+        self._server.SendToOthers({"action":"oponent_forfeit", "who":self.nickname})
+        
 class MyServer(Server):
     channelClass = ClientChannel
     def __init__(self, mylocaladdr):
@@ -48,7 +46,7 @@ class MyServer(Server):
         print("New Player connected")
         self.players[player] = True
         if len(self.players) == 2 :
-            self.SendToOthers({"action": "initplayer","who":None})
+            self.send_to_all({"action": "initplayer"})
         
     def start_player(self,data):
         #[p.Send({"action": "initplayer"}) for p in self.players]
@@ -71,6 +69,12 @@ class MyServer(Server):
     def SendToOthers(self, data):
         #p.send(data)
         [p.Send(data) for p in self.players if p.nickname != data["who"]]
+    
+    def sendto(self, data):
+        [p.Send(data) for p in self.players if p.nickname == data["who"]]
+    
+    def send_to_all(self, data):
+        [p.Send(data) for p in self.players]
     
     def Launch(self):
         while True:

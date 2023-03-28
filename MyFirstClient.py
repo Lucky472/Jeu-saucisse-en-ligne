@@ -6,6 +6,7 @@ from PodSixNet.Connection import connection, ConnectionListener
 
 from tkinter import *
 from math import sqrt
+from tkinter import messagebox as boxedmessage
 INITIAL=0
 ACTIVE=1
 INACTIVE=2
@@ -89,10 +90,12 @@ class Client(ConnectionListener):
         if self.state == ACTIVE :
             self.window.game_show.game_engine.list_player = [self.oponent,self.nickname]
             self.window.game_show.game_engine.list_color = [self.oponent_color,self.color]
+            self.window.game_show.game_engine.active_player = self.nickname
         else :
             self.window.game_show.game_engine.list_player = [self.nickname,self.oponent]
             self.window.game_show.game_engine.list_color = [self.color,self.oponent_color]
-    
+            self.window.game_show.game_engine.active_player = self.oponent
+            
     def Network_oponent_played(self,data):
         self.window.game_show.game_engine.selected_dots = data["sausage"]
         self.window.game_show.controller_sausage()
@@ -150,7 +153,7 @@ class GameShow:
             return self.game_engine.list_color[1]
         
     def forfeit_popup(self):
-        self.forfeit_popup = messagebox.askyesno(title='Forfeit', message='Do you really want to forfeit?')
+        self.forfeit_popup = boxedmessage.askyesno(title="Forfeit", message="Do you really want to forfeit?")
         if self.forfeit_popup == YES:
             self.game_engine.change_active_player()
             self.active_player.set(self.game_engine.active_player)
@@ -182,7 +185,6 @@ class GameShow:
             if len(self.game_engine.selected_dots) != 0 :
                 dot_x, dot_y = self.game_engine.selected_dots[-1]
                 self.color_point(self.game_engine.board[dot_x][dot_y],self.active_player_color())
-
     def controller_sausage(self) :
         self.draw_sausage(self.game_engine.selected_dots)
         self.change_color_point()
@@ -193,7 +195,6 @@ class GameShow:
             self.game_on = False
         self.game_engine.change_active_player()
         self.active_player.set(self.game_engine.active_player)
-        print(("show",self.active_player))
         self.label_text_next_to_active_player["bg"]=self.active_player_color()
         self.label_active_player["bg"]=self.active_player_color()
 
@@ -262,7 +263,7 @@ class GameShow:
         self.highlight_points()
 
     def show_winner(self):
-        self.canvas.create_text(WIDTHCANVAS//2,HEIGHTCANVAS//2,text="Victoire du "+str(self.active_player.get()),fill= "black",font=TEXTFONT,)
+        self.canvas.create_text(WIDTHCANVAS//2,HEIGHTCANVAS//2,text="Victoire de "+str(self.active_player.get()),fill= "black",font=TEXTFONT,)
 
 
 class GameEngine:
@@ -455,12 +456,8 @@ class GameEngine:
     def change_active_player(self):
         if self.active_player == self.list_player[0]:
             self.active_player = self.list_player[1]
-            print(self.list_player)
-            print(self.active_player)
         else :
             self.active_player = self.list_player[0]
-            print(self.list_player)
-            print(self.active_player)
         if self.state == ACTIVE:
             self.state = INACTIVE
         else :

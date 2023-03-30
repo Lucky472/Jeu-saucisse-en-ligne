@@ -30,33 +30,28 @@ SAUSAGEWIDTH = 20
 TEXTFONT = 30
 
 class Client(ConnectionListener):
-    def __init__(self, host, port, window):
+    def __init__(self, host, port, window,color,nickname):
         self.window = window
         self.Connect((host, port))
-        self.color = "#f300f3"
+        self.color = color
+        self.nickname = nickname
         self.oponent_color = "#f3f300"
         self.state=INITIAL
         print("Client started")
         print("Ctrl-C to exit")
-        
-        
+
     def Network_initplayer(self,data):
         """
         c'est dans cette fonction qu'il faut remplacer les stdin.readline par la fonction qui fait la popup pour choisir pseudo et couleur
         ou autre en tout cas c'est ici'
         """
-        print("Enter your nickname: ")
-        nickname=stdin.readline().rstrip("\n")
-        self.nickname=nickname
-        connection.Send({"action": "nickname", "nickname": nickname})
-        print("Enter your color: ")
-        self.color=stdin.readline().rstrip("\n")
+        connection.Send({"action": "nickname", "nickname": self.nickname})
         connection.Send({"action": "color" ,"color": self.color})
 
-        
+
     def Network_connected(self, data):
         print("You are now connected to the server")
-    
+
     def Loop(self):
         connection.Pump()
         self.Pump()
@@ -64,11 +59,10 @@ class Client(ConnectionListener):
     def quit(self):
         self.window.destroy()
         self.state=DEAD
-   
+
     def Network_start(self,data):
         self.state=data["state"]
         self.window.game_show.game_engine.state=data["state"]
-        
         print("started")
         print(self.state)
     
@@ -83,7 +77,7 @@ class Client(ConnectionListener):
     def Network_setactive(self,data):
         self.state = ACTIVE
         self.window.game_show.game_engine.state = ACTIVE
-    
+
     def Network_other_color(self,data):
         self.oponent_color = data["other_color"]
         self.oponent = data["who"]
@@ -95,7 +89,8 @@ class Client(ConnectionListener):
             self.window.game_show.game_engine.list_player = [self.nickname,self.oponent]
             self.window.game_show.game_engine.list_color = [self.color,self.oponent_color]
             self.window.game_show.game_engine.active_player = self.oponent
-            
+        print(self.window.game_show.game_engine.list_player)
+        
     def Network_oponent_played(self,data):
         self.window.game_show.game_engine.selected_dots = data["sausage"]
         self.window.game_show.controller_sausage()
@@ -114,18 +109,17 @@ class Client(ConnectionListener):
 #########################################################
 
 class ClientWindow(Tk):
-    def __init__(self, host, port):
+    def __init__(self, host, port, color, nickname):
         Tk.__init__(self)
-        self.client = Client(host, int(port), self)
+        self.client = Client(host, int(port), self, color, nickname)
         self.game_show = GameShow(self,self.client)
-
+            
     def myMainLoop(self):
         while self.client.state!=DEAD:
             self.update()
             self.client.Loop()
             sleep(0.001)
         exit()
-        print("jem'execute dans mainloop")
 
 
 class GameShow:
@@ -145,9 +139,7 @@ class GameShow:
         self.button_forfeit = Button(self.menu, text='Forfeit', command = self.forfeit_popup)
         self.button_undo = Button(self.menu, text='Undo', command=self.reset_sausage)
         self.canvas.bind("<Button-1>",self.on_click)
-
         self.game_on = True
-
         #Pack l'interface graphique
         self.menu.pack(expand=YES,side=TOP)
         self.plateau.pack(expand=YES,side=BOTTOM)
@@ -163,7 +155,7 @@ class GameShow:
             return self.game_engine.list_color[0]
         if self.game_engine.active_player == self.game_engine.list_player[1]:
             return self.game_engine.list_color[1]
-        
+
     def forfeit_popup(self):
         self.forfeit_popup = boxedmessage.askyesno(title="Forfeit", message="Do you really want to forfeit?")
         if self.forfeit_popup == YES:
@@ -173,10 +165,9 @@ class GameShow:
             self.label_active_player["bg"]=self.active_player_color()
             self.show_winner()
             self.client.Send({"action":"forfeit"})
-            #self.canvas.after(1500,self.window.destroy())
             self.window.state = DEAD
             exit()
-        
+
     def draw_board(self):
         """
         parcours la liste de points et crossings et quand il y a un point, le dessine 
@@ -186,13 +177,16 @@ class GameShow:
                 if self.game_engine.is_a_point(i,j):
                     self.game_engine.board[i][j].id = self.canvas.create_oval(XMIN+i*DIST-RADIUS,YMIN+j*DIST-RADIUS,XMIN+i*DIST+RADIUS,YMIN+j*DIST+RADIUS,fill = COLORPOINT)
         self.highlight_points()
-                
+
     def on_click(self,evt):
         """
             S'occupe de tous les évènements à appeller lors d'un clic
         """
         if self.game_on and self.game_engine.state == ACTIVE:
             self.game_engine.on_click(evt)
+            self.active_player.set(self.game_engine.active_player)
+            print(self.game_engine.active_player)
+            print(self.active_player)
             if len(self.game_engine.selected_dots) == 3 :
                 self.client.Send({"action":"new_sausage","sausage":self.game_engine.selected_dots})
                 self.controller_sausage()
@@ -200,6 +194,7 @@ class GameShow:
             if len(self.game_engine.selected_dots) != 0 :
                 dot_x, dot_y = self.game_engine.selected_dots[-1]
                 self.color_point(self.game_engine.board[dot_x][dot_y],self.active_player_color())
+    
     def controller_sausage(self) :
         self.draw_sausage(self.game_engine.selected_dots)
         self.change_color_point()
@@ -212,8 +207,6 @@ class GameShow:
         self.active_player.set(self.game_engine.active_player)
         self.label_text_next_to_active_player["bg"]=self.active_player_color()
         self.label_active_player["bg"]=self.active_player_color()
-
-
 
     def draw_sausage(self,dots):
         """
@@ -234,7 +227,7 @@ class GameShow:
 
         self.canvas.create_line(center1[0],center1[1],center2[0],center2[1], fill= alpha, width=SAUSAGEWIDTH )
         self.canvas.create_line(center2[0],center2[1],center3[0],center3[1], fill= alpha, width=SAUSAGEWIDTH )
-    
+
     def highlight_points(self):
         """
             Met en surbrillance les points pouvant être cliqués
@@ -249,13 +242,13 @@ class GameShow:
                         pass                    
                     elif not point.occupied :
                         self.color_point(point,COLORPOINT)
-    
+
     def color_point(self,point,color):
         """
         change la couleur d'un point par la couleur donnée.
         """
         self.canvas.itemconfig(point.id,fill = color)
-    
+
     def change_color_point(self):
         """
             change la couleur des points selctionnées en fonction du joueur"
@@ -266,7 +259,7 @@ class GameShow:
                 self.color_point(point,self.game_engine.list_color[0])
             if self.game_engine.active_player == self.game_engine.list_player[1]:
                 self.color_point(point,self.game_engine.list_color[1])            
-    
+
     def reset_sausage(self):
         """
             fonction pour annuler une saucisse en cours de fabrication
@@ -300,7 +293,7 @@ class GameEngine:
             if self.board[dot[0]][dot[1]].can_be_clicked ==True:
                 self.selected_dots.append(dot)
         self.update_dots_clickability()
-    
+
     def reset_sausage(self):
         self.selected_dots = []
         self.update_dots_clickability()
@@ -322,13 +315,13 @@ class GameEngine:
         self.selected_dots = []
         self.update_all_degree()
         self.update_dots_clickability()
-        
+
     def update_dots_clickability(self):
         for dot_x in range(0,X_AXIS_LENGTH):
             for dot_y in range(0,Y_AXIS_LENGTH):
                 if self.is_a_point(dot_x,dot_y):
                     self.update_dot_clickability(dot_x,dot_y)
-    
+
     def update_dot_clickability(self,dot_x,dot_y):
         """
         teste si le point peut être séléctionné pour une saucisse et modifie l'attribut is_clickable correctement
@@ -430,18 +423,18 @@ class GameEngine:
                     if self.board[i][j].can_be_clicked :
                         return False
         return True
-    
+
     def update_degree(self,dot_x,dot_y):
         #calcule le degré ( points libres atteignables) autour du point
         self.board[dot_x][dot_y].degree = len(self.accessible_neighbours(dot_x, dot_y))
-    
+
     def update_all_degree(self):
         #update degree pour chaque point 
         for i in range(0,X_AXIS_LENGTH):
             for j in range(0,Y_AXIS_LENGTH):
                 if self.is_a_point(i,j):
                     self.update_degree(i,j)
-    
+
     def check_coord_mouse(self,evt):
         """
             vérifie si la souris clique sur un point et renvoie les coords du point si oui et None sinon
@@ -467,7 +460,7 @@ class GameEngine:
         if dist <= RADIUS:
             return True
         return False
-    
+
     def change_active_player(self):
         if self.active_player == self.list_player[0]:
             self.active_player = self.list_player[1]
@@ -484,7 +477,6 @@ class GameEngine:
         return False
 
 
-
 class Point:
     def __init__(self):
         self.occupied = False
@@ -498,9 +490,6 @@ class Crossing:
         self.occupied = False
 
 
-
-
-
 # get command line argument of client, port
 if len(sys.argv) != 2:
     print("Please use: python3", sys.argv[0], "host:port")
@@ -508,8 +497,7 @@ if len(sys.argv) != 2:
     host, port = "localhost", "31425"
 else:
     host, port = sys.argv[1].split(":")
+"""
 client_window = ClientWindow(host, port)
 client_window.myMainLoop()
-
-
-
+"""

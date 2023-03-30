@@ -3,6 +3,9 @@ from tkinter.colorchooser import askcolor
 
 def open_window():
     Window=Tk()
+    enregistrer_pseudo()
+    enregistrer_host()
+    enregistrer_port()
 
 def change_color():
     colors=askcolor(title="Tkinter Color Chooser")
@@ -55,9 +58,6 @@ pseudo_entry1=Entry(f2,font=("arial",20),bg='#41B77F',fg='white')
 pseudo_entry1.pack()
 f2.pack()
 
-B3=Button(f1,text='valider',command=enregistrer_pseudo,bg='#4065A4')
-B3.pack()
-
 
 
 #host
@@ -69,8 +69,6 @@ pseudo_entry2=Entry(f3,font=("arial",20),bg='#41B77F',fg='white')
 pseudo_entry2.pack()
 f3.pack()
 
-B4=Button(f1,text='valider',command=enregistrer_host,bg='#4065A4')
-B4.pack()
 
 #port
 L5=Label(f1,text='port',font=("arial",19),bg='#41B77F',fg='white')
@@ -80,9 +78,6 @@ f4= Frame(f1,bg='#41B77F')
 pseudo_entry3=Entry(f4,font=("arial",20),bg='#41B77F',fg='white')
 pseudo_entry3.pack()
 f4.pack()
-
-B5=Button(f1,text='valider',command=enregistrer_port,bg='#4065A4')
-B5.pack()
 
 
 #bouton jouer

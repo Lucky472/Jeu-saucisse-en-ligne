@@ -97,13 +97,17 @@ class Client(ConnectionListener):
 
     def Network_oponent_forfeit(self,data):
         self.window.game_show.game_engine.change_active_player()
-        self.window.game_show.active_player.set(self.window.game_show.game_engine.active_player)
+        self.window.game_show.label_active_player["text"]=self.window.game_show.active_player_name()
         self.window.game_show.label_text_next_to_active_player["bg"]=self.window.game_show.active_player_color()
         self.window.game_show.label_active_player["bg"]=self.window.game_show.active_player_color()
         self.window.game_show.show_winner()
         self.window.game_show.game_on = False
         #self.window.game_show.canvas.after(1500,self.window.destroy)
         self.window.state = DEAD
+        self.new_exit()
+        
+    def new_exit(self):
+        sleep(1.658)
         exit()
 
 #########################################################
@@ -133,9 +137,7 @@ class GameShow:
         self.canvas = Canvas(self.plateau, width = WIDTHCANVAS,height=HEIGHTCANVAS,bg=COLORCANVAS,highlightthickness=3,highlightbackground=COLORPOINT)
         self.game_engine = GameEngine(self.canvas,self.client)
         self.label_text_next_to_active_player = Label(self.menu, text="Active player:", bg=self.active_player_color(),font = TEXTFONT)
-        self.active_player = StringVar()    
-        self.active_player.set(self.game_engine.active_player)
-        self.label_active_player = Label(self.menu,textvariable = self.active_player, bg=self.active_player_color(),font = TEXTFONT)
+        self.label_active_player = Label(self.menu,text = self.active_player_name(), bg=self.active_player_color(),font = TEXTFONT)
         self.button_forfeit = Button(self.menu, text='Forfeit', command = self.forfeit_popup)
         self.button_undo = Button(self.menu, text='Undo', command=self.reset_sausage)
         self.canvas.bind("<Button-1>",self.on_click)
@@ -150,6 +152,9 @@ class GameShow:
         self.button_undo.pack(side=LEFT, padx=WIDTHCANVAS//3)
         self.draw_board()
 
+    def active_player_name(self):
+        return self.game_engine.active_player
+
     def active_player_color(self):
         if self.game_engine.active_player == self.game_engine.list_player[0]:
             return self.game_engine.list_color[0]
@@ -160,13 +165,13 @@ class GameShow:
         self.forfeit_popup = boxedmessage.askyesno(title="Forfeit", message="Do you really want to forfeit?")
         if self.forfeit_popup == YES:
             self.game_engine.change_active_player()
-            self.active_player.set(self.game_engine.active_player)
+            self.label_active_player["text"]=self.active_player_name()
             self.label_text_next_to_active_player["bg"]=self.active_player_color()
             self.label_active_player["bg"]=self.active_player_color()
             self.show_winner()
             self.client.Send({"action":"forfeit"})
-            self.window.state = DEAD
-            exit()
+            self.window.client.state = DEAD
+            self.window.client.new_exit()
 
     def draw_board(self):
         """
@@ -184,9 +189,7 @@ class GameShow:
         """
         if self.game_on and self.game_engine.state == ACTIVE:
             self.game_engine.on_click(evt)
-            self.active_player.set(self.game_engine.active_player)
-            print(self.game_engine.active_player)
-            print(self.active_player)
+            self.label_active_player["text"]=self.active_player_name()
             if len(self.game_engine.selected_dots) == 3 :
                 self.client.Send({"action":"new_sausage","sausage":self.game_engine.selected_dots})
                 self.controller_sausage()
@@ -204,7 +207,7 @@ class GameShow:
             self.show_winner()
             self.game_on = False
         self.game_engine.change_active_player()
-        self.active_player.set(self.game_engine.active_player)
+        self.label_active_player["text"]=self.active_player_name()
         self.label_text_next_to_active_player["bg"]=self.active_player_color()
         self.label_active_player["bg"]=self.active_player_color()
 
@@ -271,7 +274,7 @@ class GameShow:
         self.highlight_points()
 
     def show_winner(self):
-        self.canvas.create_text(WIDTHCANVAS//2,HEIGHTCANVAS//2,text="Victoire de "+str(self.active_player.get()),fill= "black",font=TEXTFONT,)
+        self.canvas.create_text(WIDTHCANVAS//2,HEIGHTCANVAS//2,text="Victoire de "+str(self.active_player_name()),fill= "black",font=TEXTFONT,)
 
 
 class GameEngine:

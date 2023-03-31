@@ -42,8 +42,7 @@ class Client(ConnectionListener):
 
     def Network_initplayer(self,data):
         """
-        c'est dans cette fonction qu'il faut remplacer les stdin.readline par la fonction qui fait la popup pour choisir pseudo et couleur
-        ou autre en tout cas c'est ici'
+        Envoie les nom et couleur de son joueur
         """
         connection.Send({"action": "nickname", "nickname": self.nickname})
         connection.Send({"action": "color" ,"color": self.color})
@@ -85,10 +84,19 @@ class Client(ConnectionListener):
             self.window.game_show.game_engine.list_player = [self.oponent,self.nickname]
             self.window.game_show.game_engine.list_color = [self.oponent_color,self.color]
             self.window.game_show.game_engine.active_player = self.nickname
+            #initalise les labels une première fois
+            self.window.game_show.label_active_player["text"] = self.nickname
+            self.window.game_show.label_active_player["bg"] = self.color
+            self.window.game_show.label_text_next_to_active_player["bg"] = self.color
         else :
             self.window.game_show.game_engine.list_player = [self.nickname,self.oponent]
             self.window.game_show.game_engine.list_color = [self.color,self.oponent_color]
             self.window.game_show.game_engine.active_player = self.oponent
+            #initialise les labels une première fois
+            self.window.game_show.label_active_player["text"] = self.oponent
+            self.window.game_show.label_active_player["bg"] = self.oponent_color
+            self.window.game_show.label_text_next_to_active_player["bg"] = self.oponent_color
+
         print(self.window.game_show.game_engine.list_player)
         
     def Network_oponent_played(self,data):
@@ -102,7 +110,6 @@ class Client(ConnectionListener):
         self.window.game_show.label_active_player["bg"]=self.window.game_show.active_player_color()
         self.window.game_show.show_winner()
         self.window.game_show.game_on = False
-        #self.window.game_show.canvas.after(1500,self.window.destroy)
         self.window.state = DEAD
         self.new_exit()
         
